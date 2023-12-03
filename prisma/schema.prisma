@@ -5,76 +5,81 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Источник данных, указывающий на провайдера базы данных (MongoDB) и URL-адрес базы данных
 datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
+// Модель "User" представляет пользователя в системе
 model User {
   id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  name           String?
-  email          String    @unique
-  emailVerified  DateTime?
-  image          String?
-  hashedPassword String?
-  createAt       DateTime  @default(now())
-  updateAt       DateTime  @updatedAt
+  name           String? // Имя пользователя
+  email          String    @unique // Электронная почта пользователя (уникальная)
+  emailVerified  DateTime? // Дата и время подтверждения адреса электронной почты
+  image          String? // URL-адрес изображения пользователя
+  hashedPassword String? // Захешированный пароль пользователя
+  createAt       DateTime  @default(now()) // Дата и время создания пользователя
+  updateAt       DateTime  @updatedAt // Дата и время последнего обновления пользователя
 
-  conversationIds String[]       @db.ObjectId
-  conversations   Conversation[] @relation(fields: [conversationIds], references: [id])
+  conversationIds String[]       @db.ObjectId // Массив идентификаторов бесед, в которых участвует пользователь
+  conversations   Conversation[] @relation(fields: [conversationIds], references: [id]) // Связь с моделью "Conversation"
 
-  seenMessageIds String[]  @db.ObjectId
-  seenMessages   Message[] @relation("Seen", fields: [seenMessageIds], references: [id])
+  seenMessageIds String[]  @db.ObjectId // Массив идентификаторов сообщений, которые пользователь просмотрел
+  seenMessages   Message[] @relation("Seen", fields: [seenMessageIds], references: [id]) // Связь с моделью "Message"
 
-  accounts Account[]
-  messages Message[]
+  accounts Account[] // Массив учетных записей пользователя
+  messages Message[] // Массив сообщений, отправленных пользователем
 }
 
+// Модель "Account" представляет учетную запись пользователя
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
-  expires_at        Int?
-  token_type        String?
-  scope             String? @db.String
-  id_token          String?
-  session_state     String?
+  userId            String  @db.ObjectId // Идентификатор пользователя, которому принадлежит учетная запись
+  type              String // Тип учетной записи
+  provider          String // Провайдер учетной записи
+  providerAccountId String // Идентификатор провайдера учетной записи
+  refresh_token     String? @db.String // Обновляемый токен
+  access_token      String? @db.String // Токен доступа
+  expires_at        Int? // Время истечения срока действия токена
+  token_type        String? // Тип токена
+  scope             String? // Область доступа
+  id_token          String? // Идентификатор токена
+  session_state     String? // Состояние сеанса
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade) // Связь с моделью "User"
 
-  @@unique([provider, providerAccountId])
+  @@unique([provider, providerAccountId]) // Уникальный индекс для полей "provider" и "providerAccountId"
 }
 
+// Модель "Conversation" представляет беседу или чат
 model Conversation {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt     DateTime @default(now())
-  lastMessageAt DateTime @default(now())
-  name          String?
-  isGroup       Boolean?
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId // Идентификатор беседы
+  createdAt     DateTime @default(now()) // Дата и время создания беседы
+  lastMessageAt DateTime @default(now()) // Дата и время последнего сообщения в беседе
+  name          String? // Название беседы (необязательное поле)
+  isGroup       Boolean? // Флаг, определяющий, является ли беседа групповой
 
-  messagesIds String[]  @db.ObjectId
-  messages    Message[]
+  messagesIds String[]  @db.ObjectId // Массив идентификаторов сообщений в беседе
+  messages    Message[] // Массив сообщений в беседе
 
-  userIds String[] @db.ObjectId
-  users   User[]   @relation(fields: [userIds], references: [id])
+  userIds String[] @db.ObjectId // Массив идентификаторов пользователей, участвующих в беседе
+  users   User[]   @relation(fields: [userIds], references: [id]) // Связь с моделью "User"
 }
 
+// Модель "Message" представляет сообщение в беседе
 model Message {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  body      String?
-  image     String?
-  createdAt DateTime @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId // Идентификатор сообщения
+  body      String? // Текст сообщения (необязательное поле)
+  image     String? // URL-адрес изображения сообщения (необязательное поле)
+  createdAt DateTime @default(now()) // Дата и время создания сообщения
 
-  seenIds String[] @db.ObjectId
-  seen    User[]   @relation("Seen", fields: [seenIds], references: [id])
+  seenIds String[] @db.ObjectId // Массив идентификаторов пользователей, которые просмотрели сообщение
+  seen    User[]   @relation("Seen", fields: [seenIds], references: [id]) // Связь с моделью "User"
 
-  conversationId String?       @db.ObjectId
-  Conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId String?       @db.ObjectId // Идентификатор беседы, к которой относится сообщение
+  Conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade) // Связь с моделью "Conversation"
 
-  senderId String @db.ObjectId
-  sender   User   @relation(fields: [seenIds], references: [id], onDelete: Cascade)
+  senderId String @db.ObjectId // Идентификатор отправителя сообщения
+  sender   User   @relation(fields: [seenIds], references: [id], onDelete: Cascade) // Связь с моделью "User"
 }
